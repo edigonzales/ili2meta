@@ -13,7 +13,7 @@ INTERLIS 2.3;
 MODEL ModelA (de)
 AT "https://hba.so.ch"
 VERSION "2023-01-11"  =
-  IMPORTS GeometryCHLV95_V1;
+  IMPORTS GeometryCHLV95_V1, CHAdminCodes_V1;
 
   DOMAIN
 
@@ -29,10 +29,41 @@ VERSION "2023-01-11"  =
       AenderungOhneVorwirkung
     );
 
+    STRUCTURE Dokument =
+      DokumentID : TEXT*16;
+      /** Dokumentart z.B. Regierungsratsbeschluss, Zonenreglement, Sonderbauvorschriften, Erschliessungsplan, Gestaltungsplan.
+       */
+      Titel : TEXT*80;
+      /** Abkürzung Kanton
+       */
+      Kanton : CHAdminCodes_V1.CHCantonCode;
+      /** Gemeindenummer vom schweizerischen Bundesamt für Statistik (BFS-Nr.)
+       */
+      Rechtsvorschrift : BOOLEAN;
+    END Dokument;
+
+    CLASS ClassMAbtract (ABSTRACT) =
+      /** Dummy Dummy
+       */
+      LegendeText : MANDATORY TEXT;
+    END ClassMAbtract;
+  
   TOPIC TopicB =
+
+
+    STRUCTURE IliModel =
+      /** Modellname
+      */
+      Name : TEXT*800;
+      /** URL der Modellablage
+      */
+      Ablage : URI;
+    END IliModel;
+
 
     /** Baugrundklassen nach SIA 261. Die Karte der Baugrundklasse wurde gemäss der BWG-Richtlinie (2004): <br> Verfahren zur Erstellung und Verwendung von Mikrozonierungsstudien in der Schweiz, erstellt.
      */
+    !!@ title="Klasse C Schöner Titel" 
     CLASS ClassC =
       /** Rechtsstatus des Objektes
        */
@@ -91,9 +122,87 @@ VERSION "2023-01-11"  =
       Liter_pro_Stunde : 0.00 .. 5000.00;
       /** Koordinate des eingeschätzten Objektes. Kommt von der SGV-Meldung oder wird im Web GIS Client digitalisiert.
        */
-       Lage : GeometryCHLV95_V1.Coord2;
+      Lage : GeometryCHLV95_V1.Coord2;
+      /** Dokumente als Bag of Structure und als JSON-Abbildung. Auch falls JSON-Mapping default wäre, bräuchten wir es hier zum Entscheiden, wie das Attribut in GPKG etc. abgebildet wird.
+       */ 
+      !!@ili2db.mapping=JSON
+      Dokumente : BAG {0..*} OF ModelA.Dokument;
+      /** INTERLIS-Modell
+       */
+      Datenmodell : ModelA.TopicB.IliModel;
     END ClassC;
 
+    CLASS ClassDAbstract (ABSTRACT) =
+      /** Aussage der Eigentumsbeschränkung
+       */
+      LegendeText : MANDATORY TEXT;
+      /** Die Dokumente der Eigentumsbeschränkung als JSON-String codiert
+       */
+      Dokumente : MANDATORY MTEXT;
+      /** Artcode der Eigentumsbeschränkung
+       */
+      ArtCode : MANDATORY TEXT;
+      /** Artcodeliste der Eigentumsbeschränkung
+       */
+      ArtCodeliste : MANDATORY TEXT;
+      /** Thema der Eigentumsbeschränkung
+       */
+      Thema : MANDATORY TEXT;
+      /** Subthema der Eigentumsbeschränkung
+       */
+      SubThema : TEXT;
+      /** Status, ob diese Eigentumsbeschränkung in Kraft ist
+       */
+      Rechtsstatus : MANDATORY TEXT;
+      /** Zuständige Stelle für die Geobasisdaten (Originaldaten)
+       */
+      ZustaendigeStelle : MANDATORY TEXT;
+      /** Verweis auf die Website des Amtes
+       */
+      AmtImWeb : INTERLIS.URI;
+      /** Datum, ab dem diese Eigentumsbeschränkung in Auszügen erscheint
+       */
+      publiziertAb : MANDATORY INTERLIS.XMLDate;
+      /** Datum, an dem diese Eigentumsbeschränkung letztmalig in Auszügen erscheint
+       */
+      publiziertBis : INTERLIS.XMLDate;
+    END ClassDAbstract;
+  
+    /** Beschreibung Beschreibung <br> foo
+     */
+    CLASS ClassD
+    EXTENDS ClassDAbstract =
+      /** Fläche der Eigentumsbeschränkung
+       */
+      GeometrieSurface : MANDATORY GeometryCHLV95_V1.SurfaceWithOverlaps2mm;
+      /** Area-Fläche der Eigentumsbeschränkung
+       */
+      GeometrieArea : MANDATORY GeometryCHLV95_V1.AreaWithOverlaps2mm;
+      /** Multipolyon der Eigentumsbeschränkung
+       */
+       GeometrieMulti : MANDATORY GeometryCHLV95_V1.MultiSurface;
+    END ClassD;
+  
   END TopicB;
 
 END ModelA.
+
+
+MODEL ModelA_restricted (de)
+AT "https://hba.so.ch"
+VERSION "2023-12-23"  =
+  IMPORTS GeometryCHLV95_V1, CHAdminCodes_V1;
+
+  TOPIC TopicG =
+    CLASS ClassJ =
+      /** Fläche der Eigentumsbeschränkung
+       */
+      GeometrieSurface : MANDATORY GeometryCHLV95_V1.SurfaceWithOverlaps2mm;
+      /** Subthema der Eigentumsbeschränkung
+       */
+      SubThema : TEXT;
+    END ClassJ;
+
+  END TopicG;
+
+END ModelA_restricted.
