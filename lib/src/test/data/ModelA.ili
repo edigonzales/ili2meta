@@ -48,8 +48,16 @@ VERSION "2023-01-11"  =
       LegendeText : MANDATORY TEXT;
     END ClassMAbtract;
   
-  TOPIC TopicB =
+    STRUCTURE PointStructure =
+      Point : GeometryCHLV95_V1.Coord2;
+    END PointStructure;
+  
+    !!@ ili2db.mapping=MultiPoint
+    STRUCTURE MultiPoint =
+      Points : BAG {1..*} OF ModelA.PointStructure;
+    END MultiPoint;
 
+  TOPIC TopicB =
 
     STRUCTURE IliModel =
       /** Modellname
@@ -59,7 +67,6 @@ VERSION "2023-01-11"  =
       */
       Ablage : URI;
     END IliModel;
-
 
     /** Baugrundklassen nach SIA 261. Die Karte der Baugrundklasse wurde gemäss der BWG-Richtlinie (2004): <br> Verfahren zur Erstellung und Verwendung von Mikrozonierungsstudien in der Schweiz, erstellt.
      */
@@ -165,7 +172,7 @@ VERSION "2023-01-11"  =
       publiziertAb : MANDATORY INTERLIS.XMLDate;
       /** Datum, an dem diese Eigentumsbeschränkung letztmalig in Auszügen erscheint
        */
-      publiziertBis : INTERLIS.XMLDate;
+      publiziertBis : INTERLIS.XMLDateTime;
     END ClassDAbstract;
   
     /** Beschreibung Beschreibung <br> foo
@@ -180,7 +187,17 @@ VERSION "2023-01-11"  =
       GeometrieArea : MANDATORY GeometryCHLV95_V1.AreaWithOverlaps2mm;
       /** Multipolyon der Eigentumsbeschränkung
        */
-       GeometrieMulti : MANDATORY GeometryCHLV95_V1.MultiSurface;
+      GeometrieMulti : MANDATORY GeometryCHLV95_V1.MultiSurface;
+      /** Linestring, linestring
+       */
+      LineSimple : MANDATORY GeometryCHLV95_V1.Line;
+      /** CH-MultiLinestring, CH-Multilinestring
+       */
+      LineMulti : MANDATORY GeometryCHLV95_V1.MultiLine;
+      /** Ein selbstgebastelter Multipoint
+       */
+      MPunkt : MANDATORY ModelA.MultiPoint;
+
     END ClassD;
   
   END TopicB;

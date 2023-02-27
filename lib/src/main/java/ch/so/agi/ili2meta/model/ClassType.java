@@ -1,5 +1,7 @@
 package ch.so.agi.ili2meta.model;
 
+import java.util.List;
+
 public class ClassType {
     private String name;
     private String title;
@@ -10,6 +12,7 @@ public class ClassType {
     private String modelName;
     @Deprecated
     private String parentClass;
+    private List<AttributeType> attributes;
 
     public String getName() {
         return name;
@@ -52,6 +55,12 @@ public class ClassType {
     }
     public void setParentClass(String parentClass) {
         this.parentClass = parentClass;
+    }
+    public List<AttributeType> getAttributes() {
+        return attributes;
+    }
+    public void setAttributes(List<AttributeType> attributes) {
+        this.attributes = attributes;
     }
     public String getQualifiedName() {
         return modelName + "." + topicName + "." + name;
