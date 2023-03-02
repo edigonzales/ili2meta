@@ -8,6 +8,9 @@ model = "SO_AWJF_Seltene_Baumarten_Publikation_20191015"
 owner = "ch.so.awjf"
 service = "ch.so.agi"
 
+[data]
+# Hier wohl was zum Output / zu den Outputformaten?
+
 [SO_AWJF_Seltene_Baumarten_Publikation_20191015.seltene_Baumarten.Freistellung]
 title = "Freistellung (schöner Titel)"
 description = "Freistellung von Nebenbestandesbaumarten"
