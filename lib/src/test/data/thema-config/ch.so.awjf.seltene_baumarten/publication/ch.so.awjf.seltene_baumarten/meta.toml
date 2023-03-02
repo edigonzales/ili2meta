@@ -2,6 +2,8 @@
 identifier = "ch.so.awjf.seltene_baumarten"
 title = "Seltene Baumarten"
 description = "Freistellung und Pflanzungen von für Jura- und Mittellandstandorte typischen, aber selten gewordenen Nebenbestandesbaumarten. Die seltenen Baumarten tragen zur Vielfalt und Struktur des Ökosystems Wald bei."
+keywords = "Wald,selten,Baum,Bäume"
+synonmys = "foo,bar"
 model = "SO_AWJF_Seltene_Baumarten_Publikation_20191015"
 owner = "ch.so.awjf"
 service = "ch.so.agi"
