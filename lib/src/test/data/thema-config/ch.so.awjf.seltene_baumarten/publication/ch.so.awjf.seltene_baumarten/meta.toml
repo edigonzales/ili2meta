@@ -10,6 +10,7 @@ service = "ch.so.agi"
 
 [output]
 # Hier wohl was zum Output / zu den Outputformaten?
+# formats?
 
 [SO_AWJF_Seltene_Baumarten_Publikation_20191015.seltene_Baumarten.Freistellung]
 title = "Freistellung (schöner Titel)"
