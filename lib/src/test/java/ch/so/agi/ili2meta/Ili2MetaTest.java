@@ -8,10 +8,15 @@ public class Ili2MetaTest {
    @Test
    public void foo() throws Exception {
        Settings settings = new Settings();
-       settings.setValue(Settings.ILI_FILE_NAME, "src/test/data/ModelA.ili");
-       settings.setValue(Settings.XML_FILE_NAME, "/Users/stefan/tmp/meta.xml");
+       //settings.setValue(Settings.ILI_FILE_NAME, "src/test/data/ModelA.ili");
+       //settings.setValue(Settings.XML_FILE_NAME, "/Users/stefan/tmp/meta.xml");
        
        Ili2Meta ili2meta = new Ili2Meta();
-       ili2meta.run("ModelA", settings);
+       //ili2meta.runXX("ModelA", settings);
+       
+       settings.setValue(Settings.CONFIG_ROOT_DIRECTORY, "src/test/data/thema-config/");
+       
+       ili2meta.run("ch.so.awjf.seltene_baumarten", "ch.so.awjf.seltene_baumarten", settings);
+       
    }
 }

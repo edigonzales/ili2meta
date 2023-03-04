@@ -1,6 +1,6 @@
 package ch.so.agi.ili2meta.model;
 
-public class AttributeType {
+public class AttributeDescription {
     private String name;
     private String title;
     private String description;
@@ -39,7 +39,7 @@ public class AttributeType {
     }
     @Override
     public String toString() {
-        return "AttributeType [name=" + name + ", title=" + title + ", description=" + description + ", dataType="
+        return "AttributeDescription [name=" + name + ", title=" + title + ", description=" + description + ", dataType="
                 + dataType + ", mandatory=" + mandatory + "]";
     }
 }

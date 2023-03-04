@@ -7,6 +7,7 @@ public class Settings {
 
     public static final String ILI_FILE_NAME = "ILI_FILE_NAME";
     public static final String XML_FILE_NAME = "XML_FILE_NAME";
+    public static final String CONFIG_ROOT_DIRECTORY = "CONFIG_ROOT_DIRECTORY";
     
     public String getValue(String name) {
         String value = (String)values.get(name);

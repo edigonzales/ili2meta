@@ -6,9 +6,9 @@ keywords = "Wald,selten,Baum,Bäume"
 synonmys = "foo,bar"
 model = "SO_AWJF_Seltene_Baumarten_Publikation_20191015"
 owner = "ch.so.awjf"
-service = "ch.so.agi"
+servicer = "ch.so.agi"
 
-[output]
+[formats]
 # Hier wohl was zum Output / zu den Outputformaten?
 # formats?
 
@@ -17,5 +17,5 @@ title = "Freistellung (schöner Titel)"
 description = "Freistellung von Nebenbestandesbaumarten"
 
 [SO_AWJF_Seltene_Baumarten_Publikation_20191015.seltene_Baumarten.Pflanzung]
-description = "Pflanzung von seltenen Baumarten"
+description = "Pflanzung von seltenen Baumarten (Übersteuern oder nicht vorhanden)"
 

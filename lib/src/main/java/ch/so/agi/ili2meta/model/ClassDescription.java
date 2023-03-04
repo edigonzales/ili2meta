@@ -2,7 +2,7 @@ package ch.so.agi.ili2meta.model;
 
 import java.util.List;
 
-public class ClassType {
+public class ClassDescription {
     private String name;
     private String title;
     // TODO Man könnte sich überlegen, ob man den Inhalt bereits hier in ein Span-Element einpackt. Damit das ganze wohlgeformt ist.  
@@ -12,7 +12,7 @@ public class ClassType {
     private String modelName;
     @Deprecated
     private String parentClass;
-    private List<AttributeType> attributes;
+    private List<AttributeDescription> attributes;
 
     public String getName() {
         return name;
@@ -56,10 +56,10 @@ public class ClassType {
     public void setParentClass(String parentClass) {
         this.parentClass = parentClass;
     }
-    public List<AttributeType> getAttributes() {
+    public List<AttributeDescription> getAttributes() {
         return attributes;
     }
-    public void setAttributes(List<AttributeType> attributes) {
+    public void setAttributes(List<AttributeDescription> attributes) {
         this.attributes = attributes;
     }
     public String getQualifiedName() {
