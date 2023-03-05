@@ -2,6 +2,7 @@ package ch.so.agi.ili2meta.model;
 
 public class AttributeDescription {
     private String name;
+    @Deprecated
     private String title;
     private String description;
     private DataType dataType;

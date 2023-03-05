@@ -90,12 +90,14 @@ VERSION "2023-03-04" =
 
   STRUCTURE AttributeDescription = 
     name : TEXT; !! so wie er im Modell steht
+    shortDescription : MTEXT;
     dataType : TEXT;
     isMandatory : BOOLEAN;
   END AttributeDescription;
 
   STRUCTURE ClassDescription = 
-    title : TEXT;
+    name : TEXT; !! entspricht originalem Klassennamen.
+    title : TEXT; !! mittels ilidoc
     shortDescription : MTEXT;
     attributeDescription : BAG {0..*} OF SO_AGI_Metadata_20230304.AttributeDescription;
   END ClassDescription;

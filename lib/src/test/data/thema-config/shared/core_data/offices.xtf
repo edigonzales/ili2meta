@@ -21,6 +21,13 @@
         <email>mailto:afu@bd.so.ch</email>
         <phone>032 627 24 47</phone>
       </SO_AGI_Metadata_20230304.Offices.Office>
+      <SO_AGI_Metadata_20230304.Offices.Office TID="ch.so.awjf">
+        <agencyName>Amt für Jagd, Wald und Fischerei</agencyName>
+        <abbreviation>AWJF</abbreviation>
+        <officeAtWeb>https://awjf.so.ch</officeAtWeb>
+        <email>mailto:awjfvd.so.ch</email>
+        <phone>032 627 23 41</phone>
+      </SO_AGI_Metadata_20230304.Offices.Office>
     </SO_AGI_Metadata_20230304.Offices>
   </DATASECTION>
 </TRANSFER>

@@ -53,12 +53,17 @@ import ch.interlis.ili2c.metamodel.TransferDescription;
 import ch.interlis.ili2c.metamodel.Type;
 import ch.interlis.ilirepository.IliManager;
 import ch.interlis.iom.IomObject;
+import ch.interlis.iom_j.Iom_jObject;
 import ch.interlis.iom_j.xtf.XtfReader;
 import ch.interlis.iom_j.xtf.XtfWriter;
 import ch.interlis.iox.IoxEvent;
 import ch.interlis.iox.IoxException;
 import ch.interlis.iox.IoxWriter;
-import ch.interlis.iox.ObjectEvent;
+import ch.interlis.iox_j.ObjectEvent;
+import ch.interlis.iox_j.EndBasketEvent;
+import ch.interlis.iox_j.EndTransferEvent;
+import ch.interlis.iox_j.StartBasketEvent;
+import ch.interlis.iox_j.StartTransferEvent;
 import ch.so.agi.ili2meta.derived.Ili2cUtility;
 import ch.so.agi.ili2meta.derived.IliMetaAttrNames;
 import ch.so.agi.ili2meta.model.AttributeDescription;
@@ -73,75 +78,13 @@ public class Ili2Meta {
         add("formats");
     }};
 
-    // Verschiedene Möglichkeiten?
-    // - by file and name
-    // - by repo und name
-    // - by name only?
-    // - was ist mit Versionen? Für uns spielt das keine Rolle (?).
+    private static final String ILI_MODEL_METADATA = "SO_AGI_Metadata_20230304.ili";
 
-    // Weiss noch nicht genau, was der Output ist (welche "Einheit").
-    // Es kann mehrere Modelle in einer Datei geben, was machen wir damit?
-    // -> Gefühlt möchte ich wohl immer nur ein Modell beschreiben -> Siehe Fragen
-    // oben.
+    private static final String ILI_TOPIC = "SO_AGI_Metadata_20230304.ThemePublications";
+    private static final String BID = "SO_AGI_Metadata_20230304.ThemePublications";
+    private static final String TAG = "SO_AGI_Metadata_20230304.ThemePublications.ThemePublication";
 
-//    public void run(String modelName) {} // Such im Verzeichnis (welches? hardcodiert ../ili/ ?) und geo.so.ch/models
-//    public void run(String repo, String modelName) // Sucht im Repo (kann auch Verzeichnis sein) und geo.so.ch/models
-
-//    private void writeXml(String xmlFileName) throws IOException {
-//        XmlMapper xmlMapper = new XmlMapper();
-//        xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
-//        xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
-//        xmlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-//        xmlMapper.registerModule(new JavaTimeModule());
-//        
-//     
-//        XMLOutputFactory xof = XMLOutputFactory.newFactory();
-//        try {
-//            XMLStreamWriter xsw = xof.createXMLStreamWriter(new FileWriter(new File(xmlFileName)));
-//            xsw.writeStartDocument("utf-8", "1.0");
-//            xsw.writeStartElement("themePublications");
-//            
-//            // <tablesInfo><tableInfo>
-//            
-//            // Ah ich brauch das Modell als Fremdschlüssel
-//            
-////            while(themePublicationsIterator.hasNext()) {
-////                var themePub = themePublicationsIterator.next();
-////                xmlMapper.writeValue(xsw, themePub);
-////            }
-//            
-//            xsw.writeEndElement();
-//            xsw.writeEndDocument();
-//            xsw.flush();
-//            xsw.close();
-//            
-//        } catch (XMLStreamException | IOException e) {
-//            //e.printStackTrace();
-//            log.error(e.getMessage());
-//            throw new IOException(e.getMessage());
-//        }
-//
-//    }
-
-    private TransferDescription getTransferDescriptionFromModelName(String modelName, String localRepo) throws Ili2cException, IOException {
-        IliManager manager = new IliManager();
-        File ilicacheFolder = Files.createTempDirectory(Paths.get(System.getProperty("java.io.tmpdir")), ".ilicache_").toFile();        
-        manager.setCache(ilicacheFolder); // TODO https://github.com/edigonzales/ili2meta/issues/1
-        String repositories[] = new String[] { localRepo, "http://models.interlis.ch/" };
-        manager.setRepositories(repositories);
-        ArrayList<String> modelNames = new ArrayList<String>();
-        modelNames.add(modelName);
-        Configuration config = manager.getConfig(modelNames, 2.3);
-        TransferDescription td = Ili2c.runCompiler(config);
-
-        if (td == null) {
-            throw new IllegalArgumentException("INTERLIS compiler failed"); 
-        }
-        
-        return td;
-    }
-
-    private Map<String, ClassDescription> parseModel(String modelName, String themeRootDirectory) throws Ili2cException, IOException {
+    private Map<String, ClassDescription> getModelDescription(String modelName, String themeRootDirectory) throws Ili2cException, IOException {
         String localRepo = Paths.get(themeRootDirectory, "ili").toFile().getAbsolutePath();
         
         TransferDescription td = getTransferDescriptionFromModelName(modelName, localRepo);
@@ -293,7 +236,7 @@ public class Ili2Meta {
         return classTypes;
     }
     
-    private void overrideModelInfo(Map<String, ClassDescription> classDescriptions, TomlParseResult metaTomlResult) {
+    private void overrideModelDescription(Map<String, ClassDescription> classDescriptions, TomlParseResult metaTomlResult) {
         Map<String, Object> metaTomlMap = metaTomlResult.toMap();
         for (Map.Entry<String, Object> entry : metaTomlMap.entrySet()) {
             if (!META_TOML_CONFIG_RESERVED_WORDS.contains(entry.getKey())) {
@@ -323,15 +266,57 @@ public class Ili2Meta {
             System.out.println("className: " + className);
             System.out.println("title: " + title);
             System.out.println("description: " + description);
+            
+            ClassDescription classDescription = classDescriptions.get(qualifiedClassName);
+            System.out.println(classDescription);
+            
+            if (title != null) {
+                classDescription.setTitle(title);
+            } 
+
+            if (description != null) {
+                classDescription.setDescription(description);
+            }
         }
     }
+    
+    private void convertOfficeToStructure(IomObject officeObj) {
+        officeObj.setobjecttag("SO_AGI_Metadata_20230304.Office_");
+        officeObj.setobjectoid(null);
+    }
 
+    
+    // TODO: wie kann ich alle auf einmal in einem XTF exportieren?
+    // run() müsste IomObj zurückliefern.
+    // run() nochmals abstrahieren, damit run() nichts zurückliefern muss.
+    
+    
+    /*
+     * run(Settings settings) {
+     *  // alle publications (-> Modelle) eruieren
+     *  for ()  {
+     *      IomObject iomObj = getPublicationInfo(themePubliction, theme, settings)
+     *  }
+     *  // alle iomObjs schreiben
+     * } 
+     * 
+     * run(themePublication, theme, settings) {
+     *   IomObject iomObj = getPublicationInfo(themePubliction, theme, settings)
+     * }
+     * 
+     *  
+     */
+    // Woher nehme ich im "alles"-Anwendungsfall das Publiaktionsdatum?
+    // Im Einzelfall gehe ich momentan davon aus, dass das XTF im Gretljob erzeugt wird.
+    
+    
     // Wahrscheinlich ist themePublication eineindeutig. Sicherheitshalber mit theme.
     // Zudem einfacher zu programmieren, das nicht mehr durchsucht werden muss.
     // (0) Modellnamen aus Toml-Datei lesen.
     // (1) Zuerst wird das Modell geparsed.
     // (2) Anschliessend die Toml-Datei mit zusätzlichen Informationen lesen und ggf. 
     // die aus (1) eruierten Infos überschreiben.
+    // (3) XTF schreiben
     public void run(String themePublication, String theme, Settings settings) {
         String configRootDirectory = settings.getValue(Settings.CONFIG_ROOT_DIRECTORY);
         String themeRootDirectory = Paths.get(configRootDirectory, theme).toFile().getAbsolutePath();
@@ -344,64 +329,83 @@ public class Ili2Meta {
             String modelName = metaTomlResult.getString("basic.model");
         
             // (1) Informationen aus ILI-Modell lesen.
-            Map<String, ClassDescription> classDescriptions = parseModel(modelName, themeRootDirectory);
+            Map<String, ClassDescription> classDescriptions = getModelDescription(modelName, themeRootDirectory);
         
             // (2) Weitere Informationen aus Toml-Datei lesen und ggf. Modellinformationen übersteuern.
             String identifier = metaTomlResult.getString("basic.identifier");
             String title = metaTomlResult.getString("basic.title");
             String description = metaTomlResult.getString("basic.description");
             String keywords = metaTomlResult.getString("basic.keywords");
-            String synonmys = metaTomlResult.getString("basic.synonmys");
+            String synonyms = metaTomlResult.getString("basic.synonyms");
             String owner = metaTomlResult.getString("basic.owner");
             String servicer = metaTomlResult.getString("basic.servicer");
+            String licence = metaTomlResult.getString("basic.licence");
             
-            // TODO macht noch nichts.
-            overrideModelInfo(classDescriptions, metaTomlResult);
+            overrideModelDescription(classDescriptions, metaTomlResult);
 
-            // Achtung: kann null sein. später behandeln.
             IomObject servicerIomObject = getOfficeById(servicer, configRootDirectory);
+            IomObject ownerIomObject = getOfficeById(owner, configRootDirectory);
 
+            // (3) XTF schreiben.
+            String outputDirectory = Paths.get(configRootDirectory, theme, "publication", themePublication).toFile().getAbsolutePath();
+            IoxWriter ioxWriter = createMetaIoxWriter(outputDirectory, identifier);
+            ioxWriter.write(new StartTransferEvent("SOGIS-20230305", "", null));
+            ioxWriter.write(new StartBasketEvent(ILI_TOPIC,BID));
+
+            Iom_jObject iomObj = new Iom_jObject(TAG, String.valueOf(1));
+            iomObj.setattrvalue("identifier", identifier);
+            iomObj.setattrvalue("title", title);
+            if (description!=null) iomObj.setattrvalue("shortDescription", description); // CDATA wird nicht berücksichtigt. Es wird immer korrektes XML geschrieben.
+            iomObj.setattrvalue("licence", licence);
+            if (keywords!=null) iomObj.setattrvalue("keywords", keywords);
+            if (synonyms!=null) iomObj.setattrvalue("synonyms", synonyms);
             
+            if (servicerIomObject!=null) {
+                convertOfficeToStructure(servicerIomObject); 
+                iomObj.addattrobj("servicer", servicerIomObject);
+            }
+
+            if (ownerIomObject!=null) {
+                convertOfficeToStructure(ownerIomObject); 
+                iomObj.addattrobj("servicer", ownerIomObject);   
+            }
+
+            // TODO: add missing attributes etc.
             
+            for (Map.Entry<String, ClassDescription> entry : classDescriptions.entrySet()) {
+                Iom_jObject classDescObj = new Iom_jObject("SO_AGI_Metadata_20230304.ClassDescription", null); 
+
+                ClassDescription classDescription = entry.getValue();
+
+                classDescObj.setattrvalue("name", classDescription.getName());
+                classDescObj.setattrvalue("title", classDescription.getTitle());
+                classDescObj.setattrvalue("shortDescription", classDescription.getDescription());
+
+                List<AttributeDescription> attributeDescriptions = classDescription.getAttributes();
+                for (AttributeDescription attributeDescription : attributeDescriptions) {
+                    Iom_jObject attributeDescObj = new Iom_jObject("SO_AGI_Metadata_20230304.AttributeDescription", null); 
+
+                    attributeDescObj.setattrvalue("name", attributeDescription.getName());
+                    if (attributeDescription.getDescription()!=null) attributeDescObj.setattrvalue("shortDescription", attributeDescription.getDescription());
+                    attributeDescObj.setattrvalue("dataType", attributeDescription.getDataType().name());
+                    attributeDescObj.setattrvalue("isMandatory", attributeDescription.isMandatory()?"true":"false");
+                    classDescObj.addattrobj("attributeDescription", attributeDescObj);
+                }
+                iomObj.addattrobj("classDescription", classDescObj);
+            }
             
+            ioxWriter.write(new ObjectEvent(iomObj));
             
-                        
+            ioxWriter.write(new EndBasketEvent());
+            ioxWriter.write(new EndTransferEvent());
+            ioxWriter.flush();
+            ioxWriter.close();       
         } catch (IOException | Ili2cException | IoxException e) {
             e.printStackTrace();
         }
     }
-    
-    private IoxWriter createMetaIoxWriter(String outDirectory, String identifier) throws IOException, Ili2cFailure, IoxException {
-        String ILI_MODEL = "SO_AGI_Metadata_20230304.ili";
-        
-        String tmpdir = System.getProperty("java.io.tmpdir");
-        File iliFile = Paths.get(tmpdir, ILI_MODEL).toFile();
-        InputStream resource = Ili2Meta.class.getResourceAsStream("/ili/"+ILI_MODEL);
-        Files.copy(resource, iliFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        
-        ArrayList<String> filev = new ArrayList<String>() {{ add(iliFile.getAbsolutePath()); }};
-        TransferDescription td = Ili2c.compileIliFiles(filev, null);
 
-
-        File dataFile = Paths.get(outDirectory, "meta-"+identifier+".xtf").toFile();
-        IoxWriter ioxWriter = new XtfWriter(dataFile, td);
-        
-        iliFile.delete();
-
-        return ioxWriter;
-    }    
-
-    private IomObject getOfficeById(String id, String configRootDirectory) throws IOException, Ili2cFailure, IoxException {
-        String ILI_MODEL = "SO_AGI_Metadata_20230304.ili";
-        
-        String tmpdir = System.getProperty("java.io.tmpdir");
-        File iliFile = Paths.get(tmpdir, ILI_MODEL).toFile();
-        InputStream resource = Ili2Meta.class.getResourceAsStream("/ili/"+ILI_MODEL);
-        Files.copy(resource, iliFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        
-        ArrayList<String> filev = new ArrayList<String>() {{ add(iliFile.getAbsolutePath()); }};
-        TransferDescription td = Ili2c.compileIliFiles(filev, null);
-
+    private IomObject getOfficeById(String id, String configRootDirectory) throws IOException, IoxException {
         File xtfFile = Paths.get(configRootDirectory, "shared", "core_data", "offices.xtf").toFile();
         System.out.println(xtfFile.getAbsolutePath());
         XtfReader xtfReader = new XtfReader(xtfFile);
@@ -419,197 +423,48 @@ public class Ili2Meta {
         }
         return null;
     }
-    
-    
-//    public void runXX(String modelName, Settings settings) throws Ili2MetaException {
-//        List<ClassDescription> classTypes = new ArrayList<>();
-//
-//        // https://github.com/sogis/interlis-repository-creator/blob/e857016b25cb83ebe518b13409ad31a261385693/src/main/java/ch/so/agi/tasks/InterlisRepositoryCreator.java#L306
-//        // getTdFromModelName
-//
-//        // TODO ...
-//        String fileName = settings.getValue(settings.ILI_FILE_NAME);
-//        
-//        TransferDescription td = null;
-//        try {
-//            td = getTransferDescriptionFromFileName(fileName);
-//        } catch (Ili2cException e) {
-//            throw new Ili2MetaException(e);
-//        }
-//
-//        for (Model model : td.getModelsFromLastFile()) {
-//            if (!model.getName().equalsIgnoreCase(modelName)) {
-//                continue;
-//            }
-//
-//            Iterator<Element> modeli = model.iterator();
-//            while (modeli.hasNext()) {
-//                Object tObj = modeli.next();
-//
-////                log.info(tObj.toString());
-////                log.info(tObj.getClass().toString());
-//
-//                if (tObj instanceof Domain) {
-//                    // TODO falls ich die Werte will
-//                } else if (tObj instanceof Table) {
-//                    Table tableObj = (Table) tObj;
-//                    // https://github.com/claeis/ili2c/blob/ccb1331428/ili2c-core/src/main/java/ch/interlis/ili2c/metamodel/Table.java#L30
-//                    if (tableObj.isIdentifiable()) {
-//                        // Abstrakte Klasse
-//                        // Kann ich ignorieren, da alles was ich wissen will (? Attribute und
-//                        // Beschreibung) in den spezialisieren Klassen vorhanden ist.
-//                    } else {
-//                        // Struktur
-//                        // Momentan nicht von Interesse
-//                    }
-//                } else if (tObj instanceof Topic) {
-//                    Topic topic = (Topic) tObj;
-//                    Iterator<?> iter = topic.getViewables().iterator();
-//
-//                    while (iter.hasNext()) {
-//                        Object obj = iter.next();
-////                        log.info(obj.toString());
-//
-//                        // Viewable wäre "alles". Was ist sinnvoll/notwendig für unseren Usecase?
-//                        // Domains?
-//                        // Momentan nur Table berücksichtigen.
-//                        if (obj instanceof Table) {
-//                            Table table = (Table) obj;
-//
-//                            // Abstrakte Klasse oder Struktur
-//                            // Abstrakte Klasse interessiert uns nicht, da alle
-//                            // Attribute in der spezialisierte Klass vorhanden sind.
-//                            // Struktur interessiert uns vielleicht später aber
-//                            // zum jetzigen Zeitpunkt brauchen wir dieses Wissen
-//                            // nicht.
-//                            if (table.isAbstract() || !table.isIdentifiable()) {
-//                                continue;
-//                            }
-//
-//                            ClassDescription classType = new ClassDescription();
-//                            classType.setName(table.getName());
-//                            classType.setTitle(table.getMetaValue("title"));
-//                            classType.setDescription(table.getDocumentation());
-//                            classType.setModelName(modelName);
-//                            classType.setTopicName(topic.getName());
-//
-//                            // String tableName = table.getScopedName(null);
-//                            Iterator<?> attri = table.getAttributes();
-//
-//                            List<AttributeDescription> attributes = new ArrayList<>();
-//                            while (attri.hasNext()) {
-//                                Object aObj = attri.next();
-//                                AttributeDescription attributeType = new AttributeDescription();
-//
-//                                if (aObj instanceof AttributeDef) {
-//                                    AttributeDef attr = (AttributeDef) aObj;
-//                                    attributeType.setName(attr.getName());
-//                                    attributeType.setDescription(attr.getDocumentation());
-//
-//                                    Type type = attr.getDomainResolvingAll();
-//                                    attributeType.setMandatory(type.isMandatory() ? true : false);
-//
-//                                    if (type instanceof TextType t) {
-//                                        attributeType.setDataType(t.isNormalized() ? DataType.TEXT : DataType.MTEXT);
-//                                    } else if (type instanceof NumericType n) {
-//                                        attributeType.setDataType(n.getMinimum().getAccuracy() == 0 ? DataType.INTEGER : DataType.DOUBLE);
-//                                    } else if (type instanceof EnumerationType e) {
-//                                        attributeType.setDataType(DataType.ENUMERATION);
-//                                    } else if (type instanceof SurfaceOrAreaType s) {
-//                                        attributeType.setDataType(DataType.POLYGON);
-//                                    } else if (type instanceof PolylineType p) {
-//                                        attributeType.setDataType(DataType.LINESTRING);
-//                                    } else if (type instanceof CoordType c) {
-//                                        attributeType.setDataType(DataType.POINT);
-//                                    } else if (type instanceof FormattedType f) {
-//                                        String format = f.getFormat();
-//                                        if (format.contains("Year") && !format.contains("Hours")) {
-//                                            attributeType.setDataType(DataType.DATE);
-//                                        } else if (format.contains("Year") && format.contains("Hours")) {
-//                                            attributeType.setDataType(DataType.DATETIME);
-//                                        }
-//                                        // else if...
-//                                    } else if (type instanceof CompositionType c) {
-//
-//                                        if (attr.getMetaValue(IliMetaAttrNames.METAATTR_MAPPING)!= null && attr.getMetaValue(IliMetaAttrNames.METAATTR_MAPPING).equals(IliMetaAttrNames.METAATTR_MAPPING_JSON)) {
-//                                            attributeType.setDataType(DataType.JSON_TEXT);
-//                                        } else {
-//                                            Table struct = c.getComponentType();
-//
-//                                            // Wenn es
-//                                            // keine richtigen Multigeometrie-Datentypen
-//                                            // gibt, geht es nicht 100% robust.
-//                                            if (c.getCardinality().getMaximum() != 1) {
-//                                                attributeType.setDataType(DataType.UNDEFINED); // oder DataType.STRUCTURE ?
-//                                            } else {
-//                                                if (Ili2cUtility.isPureChbaseMultiSurface(td, attr)) {
-//                                                    attributeType.setDataType(DataType.MULTIPOLYGON);
-//                                                } else if (Ili2cUtility.isPureChbaseMultiLine(td, attr)) {
-//                                                    attributeType.setDataType(DataType.MULTILINESTRING);
-//                                                } else {
-//                                                    String metaValue = struct.getMetaValue(IliMetaAttrNames.METAATTR_MAPPING);
-//
-//                                                    if (metaValue == null) {
-//                                                        attributeType.setDataType(DataType.UNDEFINED);
-//                                                    } else if (metaValue
-//                                                            .equals(IliMetaAttrNames.METAATTR_MAPPING_MULTISURFACE)) {
-//                                                        attributeType.setDataType(DataType.MULTIPOLYGON);
-//                                                    } else if (metaValue
-//                                                            .equals(IliMetaAttrNames.METAATTR_MAPPING_MULTILINE)) {
-//                                                        attributeType.setDataType(DataType.MULTILINESTRING);
-//                                                    } else if (metaValue
-//                                                            .equals(IliMetaAttrNames.METAATTR_MAPPING_MULTIPOINT)) {
-//                                                        attributeType.setDataType(DataType.MULTIPOINT);
-//                                                    } else {
-//                                                        attributeType.setDataType(DataType.UNDEFINED);
-//                                                    }
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                                attributes.add(attributeType);
-//                            }
-//                            classType.setAttributes(attributes);
-//                            classTypes.add(classType);
-//                        } // else if... DOMAIN, etc.? DOMAIN nur, falls ich die Werte wirklich ausweisen will.
-//                    }
-//                }
-//            }
-//        }
 
-//        for (ClassType classType : classTypes) {
-//            System.out.println(classType.getQualifiedName());
-//            System.out.println(classType.getTitle());
-//            System.out.println(classType.getDescription());            
-//            System.out.println(classType.getAttributes());
-//        }
+    private IoxWriter createMetaIoxWriter(String outDirectory, String identifier) throws IOException, Ili2cFailure, IoxException {
+        TransferDescription td = getMetadataTransferdescription();
         
-//        String xmlFileName = settings.getValue(settings.XML_FILE_NAME);
-//        if (xmlFileName != null) {
-//            try {
-//                writeXml(xmlFileName);
-//            } catch (IOException e) {
-//                throw new Ili2MetaException(e);
-//            }
-//        }
-//    }
+        File dataFile = Paths.get(outDirectory, "meta-"+identifier+".xtf").toFile();
+        IoxWriter ioxWriter = new XtfWriter(dataFile, td);
+        
+        return ioxWriter;
+    }    
 
-//    private TransferDescription getTransferDescriptionFromFileName(String fileName) throws Ili2cException {
-//        IliManager manager = new IliManager();
-//        String repositories[] = new String[] { "https://geo.so.ch/models", "http://models.geo.admin.ch/",
-//                "http://models.interlis.ch/", "http://models.kkgeo.ch/", "." };
-//        manager.setRepositories(repositories);
-//
-//        ArrayList<String> ilifiles = new ArrayList<String>();
-//        ilifiles.add(fileName);
-//        Configuration config = manager.getConfigWithFiles(ilifiles);
-//        ch.interlis.ili2c.metamodel.TransferDescription iliTd = Ili2c.runCompiler(config);
-//
-//        if (iliTd == null) {
-//            throw new IllegalArgumentException("INTERLIS compiler failed");
-//        }
-//        return iliTd;
-//    }
+    private TransferDescription getMetadataTransferdescription() throws IOException, Ili2cFailure {        
+        String tmpdir = System.getProperty("java.io.tmpdir");
+        File iliFile = Paths.get(tmpdir, ILI_MODEL_METADATA).toFile();
+        InputStream resource = Ili2Meta.class.getResourceAsStream("/ili/"+ILI_MODEL_METADATA);
+        Files.copy(resource, iliFile.toPath(), StandardCopyOption.REPLACE_EXISTING);        
+        iliFile.delete();
 
+        ArrayList<String> filev = new ArrayList<String>() {{ add(iliFile.getAbsolutePath()); }};
+        TransferDescription td = Ili2c.compileIliFiles(filev, null);
+
+        if (td == null) {
+            throw new IllegalArgumentException("INTERLIS compiler failed");
+        }
+
+        return td;
+    }
+    
+    private TransferDescription getTransferDescriptionFromModelName(String modelName, String localRepo) throws Ili2cException, IOException {
+        IliManager manager = new IliManager();
+        File ilicacheFolder = Files.createTempDirectory(Paths.get(System.getProperty("java.io.tmpdir")), ".ilicache_").toFile();        
+        manager.setCache(ilicacheFolder); // TODO https://github.com/edigonzales/ili2meta/issues/1
+        String repositories[] = new String[] { localRepo, "http://models.interlis.ch/" };
+        manager.setRepositories(repositories);
+        ArrayList<String> modelNames = new ArrayList<String>();
+        modelNames.add(modelName);
+        Configuration config = manager.getConfig(modelNames, 2.3);
+        TransferDescription td = Ili2c.runCompiler(config);
+
+        if (td == null) {
+            throw new IllegalArgumentException("INTERLIS compiler failed"); 
+        }
+        
+        return td;
+    }
 }
