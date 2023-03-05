@@ -313,6 +313,8 @@ public class Ili2Meta {
     // Ah, Publikationsdatum der Subunits ist ja noch ein Knackpunkt...
     // Im hardodierten Fall wohl einfach -> hardcodiert.
     // Aber AV und NPL??
+    // Dienste sind natürlich noch ne Info, die so nicht wirklich machbar ist.
+    // Das geht erst, wenn alles im Repo ist, dann ist auch diese Info vorhanden.
     
     
     // Wahrscheinlich ist themePublication eineindeutig. Sicherheitshalber mit theme.
