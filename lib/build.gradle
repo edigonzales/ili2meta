@@ -26,12 +26,12 @@ dependencies {
     api 'ch.interlis:ili2c-tool:5.3.2'
     api 'ch.interlis:iox-ili:1.21.15'
     
-    api 'com.fasterxml.jackson.core:jackson-core:2.14.2'
-    api 'com.fasterxml.jackson.core:jackson-annotations:2.14.2'  
-    api 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
-    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
-    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.2'
-    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.2'
+    //api 'com.fasterxml.jackson.core:jackson-core:2.14.2'
+    //api 'com.fasterxml.jackson.core:jackson-annotations:2.14.2'  
+    //api 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+    //api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2'
+    //api 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.2'
+    //api 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.2'
     
     api 'org.tomlj:tomlj:1.1.0'
 }

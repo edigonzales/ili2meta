@@ -3,8 +3,10 @@ package ch.so.agi.ili2meta;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,14 +25,15 @@ import org.tomlj.Toml;
 import org.tomlj.TomlParseResult;
 import org.tomlj.TomlTable;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.toml.TomlMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+//import com.fasterxml.jackson.databind.SerializationFeature;
+//import com.fasterxml.jackson.dataformat.toml.TomlMapper;
+//import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+//import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
+//import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import ch.interlis.ili2c.Ili2c;
 import ch.interlis.ili2c.Ili2cException;
+import ch.interlis.ili2c.Ili2cFailure;
 import ch.interlis.ili2c.config.Configuration;
 import ch.interlis.ili2c.metamodel.AttributeDef;
 import ch.interlis.ili2c.metamodel.CompositionType;
@@ -49,6 +52,13 @@ import ch.interlis.ili2c.metamodel.Topic;
 import ch.interlis.ili2c.metamodel.TransferDescription;
 import ch.interlis.ili2c.metamodel.Type;
 import ch.interlis.ilirepository.IliManager;
+import ch.interlis.iom.IomObject;
+import ch.interlis.iom_j.xtf.XtfReader;
+import ch.interlis.iom_j.xtf.XtfWriter;
+import ch.interlis.iox.IoxEvent;
+import ch.interlis.iox.IoxException;
+import ch.interlis.iox.IoxWriter;
+import ch.interlis.iox.ObjectEvent;
 import ch.so.agi.ili2meta.derived.Ili2cUtility;
 import ch.so.agi.ili2meta.derived.IliMetaAttrNames;
 import ch.so.agi.ili2meta.model.AttributeDescription;
@@ -77,41 +87,41 @@ public class Ili2Meta {
 //    public void run(String modelName) {} // Such im Verzeichnis (welches? hardcodiert ../ili/ ?) und geo.so.ch/models
 //    public void run(String repo, String modelName) // Sucht im Repo (kann auch Verzeichnis sein) und geo.so.ch/models
 
-    private void writeXml(String xmlFileName) throws IOException {
-        XmlMapper xmlMapper = new XmlMapper();
-        xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
-        xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        xmlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        xmlMapper.registerModule(new JavaTimeModule());
-        
-     
-        XMLOutputFactory xof = XMLOutputFactory.newFactory();
-        try {
-            XMLStreamWriter xsw = xof.createXMLStreamWriter(new FileWriter(new File(xmlFileName)));
-            xsw.writeStartDocument("utf-8", "1.0");
-            xsw.writeStartElement("themePublications");
-            
-            // <tablesInfo><tableInfo>
-            
-            // Ah ich brauch das Modell als Fremdschlüssel
-            
-//            while(themePublicationsIterator.hasNext()) {
-//                var themePub = themePublicationsIterator.next();
-//                xmlMapper.writeValue(xsw, themePub);
-//            }
-            
-            xsw.writeEndElement();
-            xsw.writeEndDocument();
-            xsw.flush();
-            xsw.close();
-            
-        } catch (XMLStreamException | IOException e) {
-            //e.printStackTrace();
-            log.error(e.getMessage());
-            throw new IOException(e.getMessage());
-        }
-
-    }
+//    private void writeXml(String xmlFileName) throws IOException {
+//        XmlMapper xmlMapper = new XmlMapper();
+//        xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
+//        xmlMapper.enable(SerializationFeature.INDENT_OUTPUT);
+//        xmlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+//        xmlMapper.registerModule(new JavaTimeModule());
+//        
+//     
+//        XMLOutputFactory xof = XMLOutputFactory.newFactory();
+//        try {
+//            XMLStreamWriter xsw = xof.createXMLStreamWriter(new FileWriter(new File(xmlFileName)));
+//            xsw.writeStartDocument("utf-8", "1.0");
+//            xsw.writeStartElement("themePublications");
+//            
+//            // <tablesInfo><tableInfo>
+//            
+//            // Ah ich brauch das Modell als Fremdschlüssel
+//            
+////            while(themePublicationsIterator.hasNext()) {
+////                var themePub = themePublicationsIterator.next();
+////                xmlMapper.writeValue(xsw, themePub);
+////            }
+//            
+//            xsw.writeEndElement();
+//            xsw.writeEndDocument();
+//            xsw.flush();
+//            xsw.close();
+//            
+//        } catch (XMLStreamException | IOException e) {
+//            //e.printStackTrace();
+//            log.error(e.getMessage());
+//            throw new IOException(e.getMessage());
+//        }
+//
+//    }
 
     private TransferDescription getTransferDescriptionFromModelName(String modelName, String localRepo) throws Ili2cException, IOException {
         IliManager manager = new IliManager();
@@ -345,15 +355,71 @@ public class Ili2Meta {
             String owner = metaTomlResult.getString("basic.owner");
             String servicer = metaTomlResult.getString("basic.servicer");
             
-            // ACHTUNG: owner und servicer sind bis jetzt nur "link".
-            // Ich muss noch das Modell anpassen und ein XTF mit den Dienststellen machen und auch einlesen in eine Map.
-            
+            // TODO macht noch nichts.
             overrideModelInfo(classDescriptions, metaTomlResult);
+
+            // Achtung: kann null sein. später behandeln.
+            IomObject servicerIomObject = getOfficeById(servicer, configRootDirectory);
+
+            
+            
+            
+            
                         
-        } catch (IOException | Ili2cException e) {
+        } catch (IOException | Ili2cException | IoxException e) {
             e.printStackTrace();
         }
     }
+    
+    private IoxWriter createMetaIoxWriter(String outDirectory, String identifier) throws IOException, Ili2cFailure, IoxException {
+        String ILI_MODEL = "SO_AGI_Metadata_20230304.ili";
+        
+        String tmpdir = System.getProperty("java.io.tmpdir");
+        File iliFile = Paths.get(tmpdir, ILI_MODEL).toFile();
+        InputStream resource = Ili2Meta.class.getResourceAsStream("/ili/"+ILI_MODEL);
+        Files.copy(resource, iliFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        
+        ArrayList<String> filev = new ArrayList<String>() {{ add(iliFile.getAbsolutePath()); }};
+        TransferDescription td = Ili2c.compileIliFiles(filev, null);
+
+
+        File dataFile = Paths.get(outDirectory, "meta-"+identifier+".xtf").toFile();
+        IoxWriter ioxWriter = new XtfWriter(dataFile, td);
+        
+        iliFile.delete();
+
+        return ioxWriter;
+    }    
+
+    private IomObject getOfficeById(String id, String configRootDirectory) throws IOException, Ili2cFailure, IoxException {
+        String ILI_MODEL = "SO_AGI_Metadata_20230304.ili";
+        
+        String tmpdir = System.getProperty("java.io.tmpdir");
+        File iliFile = Paths.get(tmpdir, ILI_MODEL).toFile();
+        InputStream resource = Ili2Meta.class.getResourceAsStream("/ili/"+ILI_MODEL);
+        Files.copy(resource, iliFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        
+        ArrayList<String> filev = new ArrayList<String>() {{ add(iliFile.getAbsolutePath()); }};
+        TransferDescription td = Ili2c.compileIliFiles(filev, null);
+
+        File xtfFile = Paths.get(configRootDirectory, "shared", "core_data", "offices.xtf").toFile();
+        System.out.println(xtfFile.getAbsolutePath());
+        XtfReader xtfReader = new XtfReader(xtfFile);
+        
+        IoxEvent event = xtfReader.read();
+        while (event instanceof IoxEvent) {
+            if (event instanceof ObjectEvent) {
+                ObjectEvent objectEvent = (ObjectEvent) event;
+                IomObject iomObj = objectEvent.getIomObject();
+                if (iomObj.getobjectoid().equalsIgnoreCase(id)) {
+                    return iomObj;
+                }
+            }
+            event = xtfReader.read();
+        }
+        return null;
+    }
+    
     
 //    public void runXX(String modelName, Settings settings) throws Ili2MetaException {
 //        List<ClassDescription> classTypes = new ArrayList<>();
@@ -529,21 +595,21 @@ public class Ili2Meta {
 //        }
 //    }
 
-    private TransferDescription getTransferDescriptionFromFileName(String fileName) throws Ili2cException {
-        IliManager manager = new IliManager();
-        String repositories[] = new String[] { "https://geo.so.ch/models", "http://models.geo.admin.ch/",
-                "http://models.interlis.ch/", "http://models.kkgeo.ch/", "." };
-        manager.setRepositories(repositories);
-
-        ArrayList<String> ilifiles = new ArrayList<String>();
-        ilifiles.add(fileName);
-        Configuration config = manager.getConfigWithFiles(ilifiles);
-        ch.interlis.ili2c.metamodel.TransferDescription iliTd = Ili2c.runCompiler(config);
-
-        if (iliTd == null) {
-            throw new IllegalArgumentException("INTERLIS compiler failed");
-        }
-        return iliTd;
-    }
+//    private TransferDescription getTransferDescriptionFromFileName(String fileName) throws Ili2cException {
+//        IliManager manager = new IliManager();
+//        String repositories[] = new String[] { "https://geo.so.ch/models", "http://models.geo.admin.ch/",
+//                "http://models.interlis.ch/", "http://models.kkgeo.ch/", "." };
+//        manager.setRepositories(repositories);
+//
+//        ArrayList<String> ilifiles = new ArrayList<String>();
+//        ilifiles.add(fileName);
+//        Configuration config = manager.getConfigWithFiles(ilifiles);
+//        ch.interlis.ili2c.metamodel.TransferDescription iliTd = Ili2c.runCompiler(config);
+//
+//        if (iliTd == null) {
+//            throw new IllegalArgumentException("INTERLIS compiler failed");
+//        }
+//        return iliTd;
+//    }
 
 }
