@@ -311,6 +311,8 @@ public class Ili2Meta {
     // Oder es ist gar nicht nötig (wobei ich das bissle schade finde). Datensuche 
     // könnten einfach alle ~150 XTF irgendwo herunterladen und lesen.
     // Ah, Publikationsdatum der Subunits ist ja noch ein Knackpunkt...
+    // Im hardodierten Fall wohl einfach -> hardcodiert.
+    // Aber AV und NPL??
     
     
     // Wahrscheinlich ist themePublication eineindeutig. Sicherheitshalber mit theme.
