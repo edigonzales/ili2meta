@@ -308,6 +308,9 @@ public class Ili2Meta {
      */
     // Woher nehme ich im "alles"-Anwendungsfall das Publiaktionsdatum?
     // Im Einzelfall gehe ich momentan davon aus, dass das XTF im Gretljob erzeugt wird.
+    // Oder es ist gar nicht nötig (wobei ich das bissle schade finde). Datensuche 
+    // könnten einfach alle ~150 XTF irgendwo herunterladen und lesen.
+    // Ah, Publikationsdatum der Subunits ist ja noch ein Knackpunkt...
     
     
     // Wahrscheinlich ist themePublication eineindeutig. Sicherheitshalber mit theme.
