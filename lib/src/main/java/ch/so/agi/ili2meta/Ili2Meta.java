@@ -306,6 +306,17 @@ public class Ili2Meta {
      * 
      *  
      */
+    
+    
+    /*
+     * Mmmh, die Frage kann auch sagen: WANN schreibe ich das gesamte XML? Nicht nach einem
+     * normalen GRETL-Job. Woher soll man dann die jeweiligen Publikationsdatum kennen?
+     * Ist es nicht "richtiger" die XTF auf dem SFTP zu publizieren und die Datensuche
+     * holt die XTF von dort. Müsste auch mit S3 oder so gehen, da es immer eine Logik gibt,
+     * die relativ simple ist.
+     */
+    
+    
     // Woher nehme ich im "alles"-Anwendungsfall das Publiaktionsdatum?
     // Im Einzelfall gehe ich momentan davon aus, dass das XTF im Gretljob erzeugt wird.
     // Oder es ist gar nicht nötig (wobei ich das bissle schade finde). Datensuche 
@@ -347,6 +358,7 @@ public class Ili2Meta {
             String owner = metaTomlResult.getString("basic.owner");
             String servicer = metaTomlResult.getString("basic.servicer");
             String licence = metaTomlResult.getString("basic.licence");
+            String furtherInformation = metaTomlResult.getString("basic.furtherInformation");
             
             overrideModelDescription(classDescriptions, metaTomlResult);
 
@@ -362,8 +374,9 @@ public class Ili2Meta {
             Iom_jObject iomObj = new Iom_jObject(TAG, String.valueOf(1));
             iomObj.setattrvalue("identifier", identifier);
             iomObj.setattrvalue("title", title);
-            if (description!=null) iomObj.setattrvalue("shortDescription", description); // CDATA wird nicht berücksichtigt. Es wird immer korrektes XML geschrieben.
+            if (description!=null) iomObj.setattrvalue("shortDescription", description); // CDATA wird nicht berücksichtigt, d.h. auch mit einem CDATA-Block werden die "<"-Zeichen etc. escaped.
             iomObj.setattrvalue("licence", licence);
+            if (furtherInformation!=null) iomObj.setattrvalue("furtherInformation", keywords);            
             if (keywords!=null) iomObj.setattrvalue("keywords", keywords);
             if (synonyms!=null) iomObj.setattrvalue("synonyms", synonyms);
             
@@ -374,7 +387,7 @@ public class Ili2Meta {
 
             if (ownerIomObject!=null) {
                 convertOfficeToStructure(ownerIomObject); 
-                iomObj.addattrobj("servicer", ownerIomObject);   
+                iomObj.addattrobj("owner", ownerIomObject);   
             }
 
             // TODO: add missing attributes etc.

@@ -122,8 +122,8 @@ VERSION "2023-03-04" =
       secondToLastPublishingDate : FORMAT INTERLIS.XMLDate "1990-1-1" .. "2100-12-31";
       title : TEXT;
       shortDescription : MTEXT;
-      furtherInformation : URI; 
       licence : URI;
+      furtherInformation : URI;
       keywords : TEXT;
       synonyms : TEXT;
       owner : MANDATORY SO_AGI_Metadata_20230304.Office_;
